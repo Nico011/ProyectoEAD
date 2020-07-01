@@ -65,3 +65,5 @@ tabla <- cbind(tabla.cols1,tabla.cols2, tabla.cols3, tabla.cols4)
 
 names(tabla) <- c("Comuna", "Poblacion", "Confirmados", "Incremento", "Fallecidos", "Casos.100k")
 row.names(tabla) <- c(1:nrow(tabla))
+
+
