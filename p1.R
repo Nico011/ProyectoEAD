@@ -47,7 +47,50 @@ maule.acum <- raw.acum[raw.acum$Region == "Maule",]
 #maule.acum.tot <- rbind(maule.acum, row.totales) # agregada la fila con totales
 #se quitó maule.acum.total porque ahora si tiene una fila para los totales
 
+# Considerar la última fila que tiene el total de la región
+tot.reg <- maule.acum[nrow(maule.acum), 6:(ncol(maule.acum)-1)] # le quitamos la columna Tasa
+tot.reg
 
+# calcular los casos nuevos usando los casos acumulados
+# sea d(n) un día cualquiera y d_ac(n) los casos acumulados en el mismo día,
+# los casos nuevos de el día n sería d(n) = d_ac(n)-d_ac(n-1)
+casos.nuevos <- tot.reg
+casos.nuevos[,2:ncol(casos.nuevos)] <- tot.reg[,2:ncol(casos.nuevos)] - tot.reg[,1:(ncol(casos.nuevos)-1)]
+casos.nuevos
+
+# gráfico casos nuevos #########################
+fechas <- colnames(casos.nuevos)
+
+mat.casos.nuevos <- as.data.frame(t(as.matrix(casos.nuevos)))
+new.casos.nuevos <- cbind(mat.casos.nuevos,fechas)
+#dim(new.casos.nuevos)
+
+colnames(new.casos.nuevos) <- c("Casos.nuevos", "Fecha")
+
+new.casos.nuevos$Fecha <- gsub("X","", as.character(new.casos.nuevos$Fecha))
+new.casos.nuevos$Fecha <- gsub("\\.","-", as.character(new.casos.nuevos$Fecha))
+
+# cambiar a formato fecha y luego al formato de fecha usado en Chile
+new.casos.nuevos$Fecha <- format(as.Date(new.casos.nuevos$Fecha, format = "%Y-%m-%d"), "%d/%m/%Y")
+
+ggplot(mapping = aes(x, y)) +
+  geom_bar(data = data.frame(
+    x = as.character(as.Date(new.casos.nuevos$Fecha, format = "%d/%m/%Y")), 
+    y = new.casos.nuevos$Casos.nuevos), 
+    stat = "identity", fill = "#336699") +
+  labs(title = "Casos nuevos", subtitle = "Región del Maule", x = "Fecha", y = "Casos nuevos") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+
+# Gráfico línas continuas ############################
+ggplot(mapping = aes(x, y)) +
+  geom_line(data = data.frame(
+    x = as.character(as.Date(new.casos.nuevos$Fecha, format = "%d/%d/%Y")),
+    y = new.casos.nuevos$Casos.nuevos),
+    stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+?geom_line()
 
 # Construcción tabla ####################################
 # para la tabla son necesarias la columna Comuna (3), Población (5), Confirmados (a la última fecha), 
@@ -126,15 +169,12 @@ t1<- tabla[1:(nrow(tabla)-1),] # le quitamos la fila con el total
 #   labs(title = "Casos por comuna", subtitle = "Región del Maule", x = "Comuna", y = "Nro. de casos") +
 #   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
+# Gráfico casos confirmados y fallecidos por comuna ###############
 # intento 9 agregando leyenda
 ggplot(mapping = aes(x, y)) +
   geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Confirmados), stat = "identity", fill = "yellow") +
   geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Fallecidos), stat = "identity", fill = "black") +
   scale_fill_manual("Casos", values = c("Confirmados" = "yellow", "Fallecidos" = "black"), aesthetics = "fill") +
-  labs(title = "Casos por comuna", subtitle = "Región del Maule", x = "Comuna", y = "Nro. de casos") +
+  labs(title = "Casos por comuna", subtitle = "Región del Maule", x = "Comuna", y = "Casos confirmados (am) y fallecidos (neg)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-
-# ggplot ####################################
-ggplot(data = t1, aes(x = Comuna, y = Confirmados, color = Fallecidos)) +
-  geom_line()
