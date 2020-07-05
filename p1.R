@@ -2,8 +2,12 @@
 
 install.packages("tidyverse")
 install.packages("ggplot2")
+install.packages("gridExtra")
 
 library(tidyverse)
+library(gridExtra)
+
+setwd(getwd()) # archivos serán guardados en el directorio de trabajo 
 
 # Casos activos #########################################
 # fuente de datos: https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/input/InformeEpidemiologico/CasosActivosPorComuna.csv
@@ -49,15 +53,12 @@ maule.acum <- raw.acum[raw.acum$Region == "Maule",]
 
 # Considerar la última fila que tiene el total de la región
 tot.reg <- maule.acum[nrow(maule.acum), 6:(ncol(maule.acum)-1)] # le quitamos la columna Tasa
-tot.reg
 
 # calcular los casos nuevos usando los casos acumulados
 # sea d(n) un día cualquiera y d_ac(n) los casos acumulados en el mismo día,
 # los casos nuevos de el día n sería d(n) = d_ac(n)-d_ac(n-1)
 casos.nuevos <- tot.reg
 casos.nuevos[,2:ncol(casos.nuevos)] <- tot.reg[,2:ncol(casos.nuevos)] - tot.reg[,1:(ncol(casos.nuevos)-1)]
-casos.nuevos
-
 
 # Construcción tabla ####################################
 # para la tabla son necesarias la columna Comuna (3), Población (5), Confirmados (a la última fecha), 
@@ -74,17 +75,21 @@ tabla <- cbind(tabla.cols1,tabla.cols2, tabla.cols3, tabla.cols4)
 
 names(tabla) <- c("Comuna", "Poblacion", "Confirmados", "Incremento", "Fallecidos", "Casos.100k")
 row.names(tabla) <- c(1:nrow(tabla))
-tabla
-t.tabla <- t(tabla)
-t.tabla.colnames <- t.tabla[1,]
-as.factor(t.tabla.colnames)
-t.tabla <- t.tabla[2:nrow(t.tabla),]
-colnames(t.tabla) <- t.tabla.colnames # se asignan las comunas como nombre de las columnas
-
-t.tabla
+# tabla
+# t.tabla <- t(tabla)
+# t.tabla.colnames <- t.tabla[1,]
+# as.factor(t.tabla.colnames)
+# t.tabla <- t.tabla[2:nrow(t.tabla),]
+# colnames(t.tabla) <- t.tabla.colnames # se asignan las comunas como nombre de las columnas
+# 
+# t.tabla
 
 t1<- tabla[1:(nrow(tabla)-1),] # le quitamos la fila con el total
+t1
 
+pdf("salida-tabla.pdf", height=12, width=10)
+grid.table(t1)
+dev.off() # cerrar el pdf
 
 # intento 1
 # ggplot(data = tabla) +
@@ -137,7 +142,7 @@ t1<- tabla[1:(nrow(tabla)-1),] # le quitamos la fila con el total
 #   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 
-
+pdf("salida-graficos.pdf", height=10, width=15)
 
 # Gráfico casos confirmados y fallecidos por comuna ###############
 # intento 9 agregando leyenda
@@ -148,6 +153,8 @@ ggplot(mapping = aes(x, y)) +
   labs(title = "Casos por comuna", subtitle = "Región del Maule", x = "Comuna", y = "Casos confirmados (am) y fallecidos (neg)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
+
+ggsave("salida-graficos.pdf", width = 13, height = 10, units = "cm")
 
 
 # Gráfico casos nuevos #########################
@@ -173,7 +180,7 @@ ggplot(mapping = aes(x, y)) +
   labs(title = "Casos nuevos", subtitle = "Región del Maule", x = "Fecha", y = "Casos nuevos") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-
+#ggsave("salida-graficos.pdf", width = 20, height = 15, units = "cm")
 
 # Nueva tabla de datos estandarizada ####################
 
@@ -183,7 +190,7 @@ raw.nac.covid <- as.data.frame(raw.nac.covid)
 
 maule.covid <- raw.nac.covid[which(raw.nac.covid$Region == "Maule"),]
 
-table(maule.covid$Categoria)
+#table(maule.covid$Categoria)
 
 # Gráfico líneas ############
 maule.covid.2 <- maule.covid[which(
@@ -198,7 +205,7 @@ ggplot(data=maule.covid.2, aes(x=Fecha, y=Total, group=Categoria, colour=Categor
   labs(title = "Casos por fecha", subtitle = "Región del Maule") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = c(0.1, 0.85))
 
-
+#ggsave("salida-graficos.pdf", width = 20, height = 15, units = "cm")
 
 
 
@@ -227,3 +234,6 @@ ggplot(maule.covid.simple, aes(x=Fecha, y=Total, fill=Categoria)) + geom_bar(sta
   scale_fill_manual("Casos", values = 
                       c("Casos activos confirmados" = "blue", "Fallecidos totales" = "black", "Casos acumulados" = "yellow"), aesthetics = "fill") 
 
+#ggsave("salida-graficos.pdf", width = 20, height = 15, units = "cm")
+
+dev.off() # cerrar el pdf
