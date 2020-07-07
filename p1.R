@@ -87,8 +87,8 @@ pdf("salida-graficos.pdf", height=10, width=15)
 # Gráfico casos confirmados y fallecidos por comuna ###############
 
 ggplot(mapping = aes(x, y)) +
-  geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Confirmados), stat = "identity", fill = "yellow") +
-  geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Fallecidos), stat = "identity", fill = "black") +
+  geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Confirmados), stat = "identity", fill = "yellow", width = 0.7) +
+  geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Fallecidos), stat = "identity", fill = "black", width = 0.7) +
   scale_fill_manual("Casos", values = c("Confirmados" = "yellow", "Fallecidos" = "black"), aesthetics = "fill") +
   labs(title = "Casos por comuna", subtitle = "Región del Maule", x = "Comuna", y = "Casos confirmados (am) y fallecidos (neg)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
@@ -114,7 +114,8 @@ new.casos.nuevos$Fecha <- format(as.Date(new.casos.nuevos$Fecha, format = "%Y-%m
 ggplot(mapping = aes(x, y)) +
   geom_bar(data = data.frame(
     x = as.character(as.Date(new.casos.nuevos$Fecha, format = "%d/%m/%Y")), 
-    y = new.casos.nuevos$Casos.nuevos), 
+    y = new.casos.nuevos$Casos.nuevos),
+    width = 0.7,
     stat = "identity", fill = "#336699") +
   labs(title = "Casos nuevos", subtitle = "Región del Maule", x = "Fecha", y = "Casos nuevos") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
@@ -137,6 +138,23 @@ maule.covid.2 <- maule.covid[which(
      (maule.covid$Categoria == "Casos nuevos totales") |
      (maule.covid$Categoria == "Casos activos confirmados"))),]
 
+# Tratamiento de valores NA
+which(is.na(maule.covid.2) & maule.covid.2$Categoria == "Casos activos confirmados")
+which(is.na(maule.covid.2) & maule.covid.2$Categoria == "Casos acumulados")
+which(is.na(maule.covid.2) & maule.covid.2$Categoria == "Casos nuevos totales")
+which(is.na(maule.covid.2) & maule.covid.2$Categoria == "Fallecidos totales")
+# existen valores NA en Casos activos confirmados y Fallecidos totales
+
+# Los valores NA en Fallecidos totales corresponden a la cifra de fallecidos 
+# antes de que se registre el primer caso)
+# Por lo tanto se reemplazan por 0
+maule.covid.2[is.na(maule.covid.2) & maule.covid.2$Categoria == "Fallecidos totales"] = 0
+
+
+length(which(is.na(maule.covid.2) & maule.covid.2$Categoria == "Casos activos confirmados"))
+# para los Casos activos confirmados se registran +100 NA, los que serán omitods
+maule.covid.2 <- na.omit(maule.covid.2)
+
 ggplot(data=maule.covid.2, aes(x=Fecha, y=Total, group=Categoria, colour=Categoria)) +
   geom_line(size=1.5) +
   labs(title = "Casos por fecha", subtitle = "Región del Maule") +
@@ -149,7 +167,15 @@ maule.covid.simple <- maule.covid[which(
     ((maule.covid$Categoria == "Casos acumulados") |
     (maule.covid$Categoria == "Fallecidos totales"))),]
 
-ggplot(maule.covid.simple, aes(x=Fecha, y=Total, fill=Categoria)) + geom_bar(stat="identity") +
+# revisión de valores NA
+which(is.na(maule.covid.simple))
+# Los valores NA corresponden a la cifra de fallecidos 
+# antes de que se registre el primer caso)
+# Por lo tanto se reemplazan por 0
+maule.covid.simple[is.na(maule.covid.simple)] = 0
+
+ggplot(maule.covid.simple, aes(x=Fecha, y=Total, fill=Categoria)) + 
+  geom_bar(stat="identity", width = 0.7) +
   labs(title = "Casos por fecha", subtitle = "Región del Maule") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = c(0.1, 0.85)) +
   scale_fill_manual("Casos", values = 
