@@ -7,40 +7,38 @@ install.packages("gridExtra")
 library(tidyverse)
 library(gridExtra)
 
-setwd(getwd()) # archivos serán guardados en el directorio de trabajo 
+setwd(getwd()) # archivos serán guardados en el directorio de trabajo.
+# Son 2 archivos de salida: uno con la tabla que contiene la información de la región del Maule,
+# el otro contiene los distintos gráficos de barras y líneas.
+# Ejecutar getwd() para conocer el directorio de trabajo.
+
+# Info #################
+# Licencia: https://github.com/MinCiencia/Datos-COVID19/blob/master/LICENSE
+# Fuentes: Ministerio de Ciencias, Ministerio de Salud
+# Fuente de datos: (https://github.com/MinCiencia/Datos-COVID19)
+
 
 # Casos activos #########################################
-# fuente de datos: https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/input/InformeEpidemiologico/CasosActivosPorComuna.csv
+# Fuente de datos: Informe epidemiológico
+# https://github.com/MinCiencia/Datos-COVID19/blob/master/input/InformeEpidemiologico/CasosActivosPorComuna.csv
 # se leen los datos desde la url entregada en formato raw
 raw.activos <- read.csv(url("https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/input/InformeEpidemiologico/CasosActivosPorComuna.csv"))
-#head(raw)
+
 
 # se extraen los datos de la región del Maule
 maule.activos <- raw.activos[raw.activos$Region == "Maule",]
-#str(maule.activos)
-
-# se obtienen los nombres de las columnas que son fechas
-# maule.colnames <- colnames(maule.activos)[6:ncol(maule.activos)]
-# maule.colnames
-
-#ggplot(data = maule.activos, aes(x=Comuna, y=colnames(maule.activos)[ncol(maule.activos)])) +
-#  geom_bar(stat = "identity", width = 0.5) +
-#  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-
-# ggplot(data = maule.activos, aes(x=c(colnames(maule.activos)[6:ncol(maule.activos)]), y=Region)) +
-#   geom_bar(stat = "identity", width = 0.5) +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 
 # Casos fallecidos ######################################
-# fuente de datos: https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/input/InformeEpidemiologico/CasosFallecidosPorComuna.csv
+# fuente de datos: Informe epidemiológico
+# https://github.com/MinCiencia/Datos-COVID19/blob/master/input/InformeEpidemiologico/CasosFallecidosPorComuna.csv
 raw.fallec <- read.csv("https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/input/InformeEpidemiologico/CasosFallecidosPorComuna.csv")
 maule.fallec <- raw.fallec[raw.fallec$Region == "Maule",]
 maule.fallec.simple <- maule.fallec[c(3, 5, ncol(maule.fallec))]
 
 # Casos acumulados ######################################
-# fuente de datos: https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/input/InformeEpidemiologico/CasosAcumuladosPorComuna.csv
+# fuente de datos: Informe epidemiológico
+# https://github.com/MinCiencia/Datos-COVID19/blob/master/input/InformeEpidemiologico/CasosAcumuladosPorComuna.csv
 raw.acum <- read.csv("https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/input/InformeEpidemiologico/CasosAcumuladosPorComuna.csv")
 maule.acum <- raw.acum[raw.acum$Region == "Maule",]
 
@@ -56,7 +54,7 @@ tot.reg <- maule.acum[nrow(maule.acum), 6:(ncol(maule.acum)-1)] # le quitamos la
 
 # calcular los casos nuevos usando los casos acumulados
 # sea d(n) un día cualquiera y d_ac(n) los casos acumulados en el mismo día,
-# los casos nuevos de el día n sería d(n) = d_ac(n)-d_ac(n-1)
+# los casos nuevos del día n sería d(n) = d_ac(n)-d_ac(n-1)
 casos.nuevos <- tot.reg
 casos.nuevos[,2:ncol(casos.nuevos)] <- tot.reg[,2:ncol(casos.nuevos)] - tot.reg[,1:(ncol(casos.nuevos)-1)]
 
@@ -66,6 +64,7 @@ casos.nuevos[,2:ncol(casos.nuevos)] <- tot.reg[,2:ncol(casos.nuevos)] - tot.reg[
 # los confirmados/100k habitantes
 ultima.col.acum <- ncol(maule.acum)-1
 tabla.cols1 <- maule.acum[,c(3, 5, ultima.col.acum)]
+
 # calcular el aumento usando la penúltima columna y la anterior
 tabla.cols2 <- maule.acum[,ultima.col.acum] - maule.acum[,ultima.col.acum-1]
 tabla.cols3 <- maule.fallec.simple[,ncol(maule.fallec.simple)]
@@ -75,14 +74,6 @@ tabla <- cbind(tabla.cols1,tabla.cols2, tabla.cols3, tabla.cols4)
 
 names(tabla) <- c("Comuna", "Poblacion", "Confirmados", "Incremento", "Fallecidos", "Casos.100k")
 row.names(tabla) <- c(1:nrow(tabla))
-# tabla
-# t.tabla <- t(tabla)
-# t.tabla.colnames <- t.tabla[1,]
-# as.factor(t.tabla.colnames)
-# t.tabla <- t.tabla[2:nrow(t.tabla),]
-# colnames(t.tabla) <- t.tabla.colnames # se asignan las comunas como nombre de las columnas
-# 
-# t.tabla
 
 t1<- tabla[1:(nrow(tabla)-1),] # le quitamos la fila con el total
 t1
@@ -91,61 +82,10 @@ pdf("salida-tabla.pdf", height=12, width=10)
 grid.table(t1)
 dev.off() # cerrar el pdf
 
-# intento 1
-# ggplot(data = tabla) +
-#   geom_bar(mapping = aes(x = Comuna, fill = Fallecidos)) +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-#intento 2
-# ggplot(data = tabla) +
-#   geom_bar(mapping = aes(x = Comuna, fill = Confirmados), position = "fill") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-# intento 3
-# ggplot(data = tabla, aes(x = Comuna, y = Confirmados, fill = Fallecidos)) +
-#   geom_bar(position = "stack", stat = "identity") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-# intento 4
-
-# ggplot(data=t1, aes(x = Comuna, y = Confirmados, fill = Fallecidos)) +
-#   geom_bar(stat = "identity")+
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-# internto 5 $$$$$
-# ggplot(data = t1, aes(x = Comuna, y = Confirmados, color = as.factor(Fallecidos))) +
-#   geom_bar(stat = "identity", position = "dodge") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-#t.tabla2 <- as.data.frame(t.tabla)
-
-# intento 6 con facetas
-# ggplot(data = t1, aes(x = Comuna, y = Confirmados, fill = Fallecidos)) +
-#   geom_bar(position = "dodge", stat = "identity") +
-#   facet_wrap(~Fallecidos) +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-# intento 7
-# t1.order <- t1[order(-t1$Confirmados),]
-# 
-# ggplot(mapping = aes(x, y)) +
-#   geom_bar(data = data.frame(x = t1.order$Comuna, y = t1.order$Confirmados), stat = "identity", fill = "yellow") +
-#   geom_bar(data = data.frame(x = t1.order$Comuna, y = t1.order$Fallecidos), stat = "identity", fill = "black") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-
-# intento 8 para ordenar las columnas
-# ggplot(mapping = aes(x, y)) +
-#   geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Confirmados), stat = "identity", fill = "yellow") +
-#   geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Fallecidos), stat = "identity", fill = "black") +
-#   labs(title = "Casos por comuna", subtitle = "Región del Maule", x = "Comuna", y = "Nro. de casos") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-
 pdf("salida-graficos.pdf", height=10, width=15)
 
 # Gráfico casos confirmados y fallecidos por comuna ###############
-# intento 9 agregando leyenda
+
 ggplot(mapping = aes(x, y)) +
   geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Confirmados), stat = "identity", fill = "yellow") +
   geom_bar(data = data.frame(x = reorder(t1$Comuna, -t1$Confirmados), y = t1$Fallecidos), stat = "identity", fill = "black") +
@@ -162,7 +102,6 @@ fechas <- colnames(casos.nuevos)
 
 mat.casos.nuevos <- as.data.frame(t(as.matrix(casos.nuevos)))
 new.casos.nuevos <- cbind(mat.casos.nuevos,fechas)
-#dim(new.casos.nuevos)
 
 colnames(new.casos.nuevos) <- c("Casos.nuevos", "Fecha")
 
@@ -180,17 +119,16 @@ ggplot(mapping = aes(x, y)) +
   labs(title = "Casos nuevos", subtitle = "Región del Maule", x = "Fecha", y = "Casos nuevos") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-#ggsave("salida-graficos.pdf", width = 20, height = 15, units = "cm")
 
-# Nueva tabla de datos estandarizada ####################
+# Tabla de datos estandarizada ####################
 
-# fuente de datos: https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto3/TotalesPorRegion_std.csv
+# fuente de datos: Minsal (Producto 3)
+# https://github.com/MinCiencia/Datos-COVID19/blob/master/output/producto3/TotalesPorRegion_std.csv
 raw.nac.covid <- read.csv("https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto3/TotalesPorRegion_std.csv")
 raw.nac.covid <- as.data.frame(raw.nac.covid)
 
 maule.covid <- raw.nac.covid[which(raw.nac.covid$Region == "Maule"),]
 
-#table(maule.covid$Categoria)
 
 # Gráfico líneas ############
 maule.covid.2 <- maule.covid[which(
@@ -199,15 +137,10 @@ maule.covid.2 <- maule.covid[which(
      (maule.covid$Categoria == "Casos nuevos totales") |
      (maule.covid$Categoria == "Casos activos confirmados"))),]
 
-# intento 1
 ggplot(data=maule.covid.2, aes(x=Fecha, y=Total, group=Categoria, colour=Categoria)) +
   geom_line(size=1.5) +
   labs(title = "Casos por fecha", subtitle = "Región del Maule") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = c(0.1, 0.85))
-
-#ggsave("salida-graficos.pdf", width = 20, height = 15, units = "cm")
-
-
 
 
 # Grafico barras casos acumulados vs fallecidos #################
@@ -216,24 +149,10 @@ maule.covid.simple <- maule.covid[which(
     ((maule.covid$Categoria == "Casos acumulados") |
     (maule.covid$Categoria == "Fallecidos totales"))),]
 
-# intento 1
-# ggplot(mapping = aes(x, y)) +
-#   geom_bar(data = data.frame(x = maule.covid.simple$Fecha, y = maule.covid.simple$Categoria), stat = "identity", fill = "yellow") +
-#   scale_fill_manual("Casos", values = c("Confirmados" = "yellow", "Fallecidos" = "black"), aesthetics = "fill") +
-#   labs(title = "Casos por comuna", subtitle = "Región del Maule", x = "Comuna", y = "Casos confirmados (am) y fallecidos (neg)") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-#intento 2
-# ggplot(data = maule.covid.simple, aes(x = Fecha))+
-#   geom_bar(aes(y=Start),stat="identity",position ="identity",alpha=.3,fill='lightblue',color='lightblue4') +
-#   geom_bar(aes(y=End),stat="identity",position ="identity",alpha=.8,fill='pink',color='red')
-
 ggplot(maule.covid.simple, aes(x=Fecha, y=Total, fill=Categoria)) + geom_bar(stat="identity") +
   labs(title = "Casos por fecha", subtitle = "Región del Maule") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = c(0.1, 0.85)) +
   scale_fill_manual("Casos", values = 
                       c("Casos activos confirmados" = "blue", "Fallecidos totales" = "black", "Casos acumulados" = "yellow"), aesthetics = "fill") 
-
-#ggsave("salida-graficos.pdf", width = 20, height = 15, units = "cm")
 
 dev.off() # cerrar el pdf
